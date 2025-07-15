@@ -21,6 +21,8 @@ pip install git+https://github.com/huggingface/transformers.git
 # Parler-TTS
 pip install git+https://github.com/huggingface/parler-tts.git
 
+pip install --upgrade gradio
+pip install flash-attn
 # Hugging Face login
 huggingface-cli login
 
