@@ -9,13 +9,10 @@ huggingface_hub==0.23.4
 faster-whisper==1.0.3
 ctranslate2==4.3.1
 
-# Text-to-Speech (TTS) - Indic Parler-TTS
-parler-tts==0.1.0
+# Text-to-Speech (TTS) - Parler-TTS
+parler-tts==0.2.3
 numpy==2.1.1
 soundfile==0.12.1
 
 # Web UI
-gradio==4.45.0
-
-# Additional dependencies
-librosa==0.10.1
+gradio==4.44.1
