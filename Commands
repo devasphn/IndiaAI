@@ -1,0 +1,25 @@
+cd workspace
+git clone https://github.com/devasphn/IndiaAI/
+cd IndiaAI
+
+# System dependencies
+apt update
+apt-get install -y libsndfile1 ffmpeg build-essential git-lfs libcudnn8
+
+# PyTorch with CUDA support
+pip install torch==2.4.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu121
+
+# Core dependencies
+pip install -r requirements.txt
+
+# Transformers (latest)
+pip install git+https://github.com/huggingface/transformers.git
+
+# Parler-TTS
+pip install git+https://github.com/huggingface/parler-tts.git
+
+# Hugging Face login
+huggingface-cli login
+
+# Run the application
+python app.py
