@@ -98,23 +98,24 @@ class RealTimeS2SAgent:
         # Create description for Indian English voice with emotion
         description = f"A female Indian English speaker with {emotion} emotion, clear pronunciation, and natural intonation."
         
-        # Tokenize inputs
+        # Tokenize inputs with attention mask
         inputs = self.tts_tokenizer(clean_text, return_tensors="pt").to(self.device)
         prompt = self.tts_tokenizer(description, return_tensors="pt").to(self.device)
         
-        # Generate speech with attention mask
         attention_mask = inputs.attention_mask
+        
+        # Generate speech
         with torch.no_grad():
             generation = self.tts_model.generate(
                 input_ids=inputs.input_ids,
                 prompt_input_ids=prompt.input_ids,
                 attention_mask=attention_mask,
                 do_sample=True,
-                temperature=0.8,
+                temperature=0.7,
                 max_length=2048,
             )
         
-        # Convert to float32 before numpy (fixes bfloat16 error)
+        # Cast to float32 before numpy conversion (fixes bfloat16 error)
         generation = generation.to(torch.float32)
         
         # Convert to audio array
