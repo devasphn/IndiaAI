@@ -4,7 +4,6 @@ import faster_whisper
 import gradio as gr
 import numpy as np
 import soundfile as sf
-import time
 import os
 import re
 from parler_tts import ParlerTTSForConditionalGeneration
@@ -13,7 +12,7 @@ from transformers import AutoTokenizer
 # --- Configuration ---
 STT_MODEL = "distil-large-v3"
 LLM_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
-TTS_MODEL = "parler-tts/parler-tts-mini-v1"  # Updated to compatible model
+TTS_MODEL = "parler-tts/parler-tts-mini-v1"
 OUTPUT_WAV_FILE = "output.wav"
 
 class RealTimeS2SAgent:
@@ -65,8 +64,9 @@ class RealTimeS2SAgent:
 
     def generate_response(self, chat_history: list) -> str:
         messages = [
-            {"role": "system", "content": "You are Deva, a friendly AI with emotional intelligence. Respond naturally. If the user asks to laugh or express emotion, include tags like [laughs] or [sighs] in your response."}
+            {"role": "system", "content": "You are Deva, a friendly conversational AI with Indian personality. Respond naturally and expressively. When appropriate, indicate emotions like [Happy], [Laughing], [Sad], [Surprised], [Angry], [Neutral], [Conversational] at the beginning of your response to guide voice generation."}
         ]
+        
         for msg in chat_history:
             if msg['role'] in ['user', 'assistant']:
                 messages.append(msg)
@@ -75,10 +75,12 @@ class RealTimeS2SAgent:
             self.llm_pipeline.tokenizer.eos_token_id,
             self.llm_pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
         ]
+        
         outputs = self.llm_pipeline(
             messages, max_new_tokens=256, eos_token_id=terminators, do_sample=True,
             temperature=0.7, top_p=0.9, pad_token_id=self.llm_pipeline.tokenizer.eos_token_id,
         )
+        
         assistant_response = outputs[0]["generated_text"][-1]['content']
         print(f"Agent: {assistant_response}")
         return assistant_response
@@ -86,18 +88,41 @@ class RealTimeS2SAgent:
     def convert_text_to_speech(self, text: str) -> str:
         print("Speaking with Parler-TTS...")
         
-        # Process for natural Indian voice with emotion
-        description = "A female speaker with a natural Indian accent, speaking clearly and expressively."
-        inputs = self.tts_tokenizer.apply_chat_template([{"role": "user", "content": description + " " + text}], return_tensors="pt").to(self.device)
+        # Extract emotion from text
+        emotion_match = re.search(r'\[(\w+)\]', text)
+        emotion = emotion_match.group(1).lower() if emotion_match else "conversational"
         
+        # Clean text
+        clean_text = re.sub(r'\[\w+\]', '', text).strip()
+        
+        # Create description for Indian English voice with emotion
+        description = f"A female Indian English speaker with {emotion} emotion, clear pronunciation, and natural intonation."
+        
+        # Tokenize inputs
+        input_ids = self.tts_tokenizer(clean_text, return_tensors="pt").input_ids.to(self.device)
+        prompt_input_ids = self.tts_tokenizer(description, return_tensors="pt").input_ids.to(self.device)
+        
+        # Generate speech
         with torch.no_grad():
-            audio = self.tts_model.generate(inputs, max_length=2048, temperature=0.8, top_p=0.95, top_k=50)
+            generation = self.tts_model.generate(
+                input_ids=input_ids,
+                prompt_input_ids=prompt_input_ids,
+                do_sample=True,
+                temperature=0.8,
+                max_length=2048,
+            )
         
-        sf.write(OUTPUT_WAV_FILE, audio.cpu().numpy().squeeze(), self.tts_model.config.sampling_rate)
+        # Convert to audio
+        audio_arr = generation.cpu().numpy().squeeze()
+        
+        # Save audio file
+        sf.write(OUTPUT_WAV_FILE, audio_arr, 16000)
+        
         return OUTPUT_WAV_FILE
 
     def process_conversation_turn(self, audio_filepath: str, chat_history: list):
         if audio_filepath is None: return chat_history, None
+        
         user_text = self.transcribe_audio(audio_filepath)
         if not user_text.strip(): return chat_history, None
             
@@ -111,7 +136,7 @@ class RealTimeS2SAgent:
 def build_ui(agent: RealTimeS2SAgent):
     with gr.Blocks(theme=gr.themes.Soft(), title="S2S Agent with Parler-TTS") as demo:
         gr.Markdown("# Real-Time Speech-to-Speech AI Agent (Parler-TTS)")
-        gr.Markdown("Tap the microphone, speak, and the agent will respond with natural voice.")
+        gr.Markdown("Tap the microphone, speak, and the agent will respond with natural Indian voice and emotions.")
 
         chatbot = gr.Chatbot(label="Conversation", height=500, type="messages")
         
