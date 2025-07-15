@@ -1,0 +1,21 @@
+# Core AI/ML
+torch==2.4.0
+torchaudio==2.4.0
+accelerate==0.30.1
+bitsandbytes==0.43.1
+huggingface_hub==0.23.4
+
+# Speech-to-Text (STT)
+faster-whisper==1.0.3
+ctranslate2==4.3.1
+
+# Text-to-Speech (TTS) - Indic Parler-TTS
+parler-tts==0.1.0
+numpy==2.1.1
+soundfile==0.12.1
+
+# Web UI
+gradio==4.45.0
+
+# Additional dependencies
+librosa==0.10.1
